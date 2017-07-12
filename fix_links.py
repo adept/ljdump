@@ -2,6 +2,11 @@
 #
 # Originally taken from http://bluedrag.dreamwidth.org/296158.html and further modified
 #
+# Usage:
+# 1) Get the ljdump.py script, create ljdump.config, run ljdump
+# 2) set env var DIFF to your favorite diffing program (I used patdiff)
+# 3) Run this script in the directory where ldjump.config is. Examine the diff and answer questions
+# 
 
 import codecs, os, pickle, pprint, re, shutil, sys, urllib2, xml.dom.minidom, xmlrpclib
 import subprocess
@@ -97,7 +102,8 @@ def process(server_url, username, password, journal):
             old_f.write(old_text.encode('utf-8'))
             old_f.close()
 
-            subprocess.call(["/home/adept/bin/patdiff","/tmp/old","/tmp/new"])
+            diff = os.getenv('DIFF','/usr/bin/diff')
+            subprocess.call([diff,"/tmp/old","/tmp/new"])
             # print new_text
             # print dw_url
 
