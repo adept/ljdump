@@ -77,11 +77,15 @@ def process(server_url, username, password, journal):
          # usernames with underscores are handled differently
          if re.search(r'livejournal\.com/_',import_source):
              lj_url = re.sub(r'livejournal\.com/(.*?)/(.*)', r'http://users.livejournal.com/\1/\2.html', import_source)
+             # If nick had undescores, URLs might contain both _nick_ and -nick-
+             # Lets handle both cases
+             url[lj_url] = dw_url
+             url[re.sub('_','-',lj_url)] = dw_url
          else:
              lj_url = re.sub(r'livejournal\.com/(.*?)/(.*)', r'http://\1.livejournal.com/\2.html', import_source)
-         print "%s -> %s" % (lj_url, dw_url)
-         url[lj_url] = dw_url
+             url[lj_url] = dw_url
          posts[dw_url] = root
+         
 
     ljsession = getljsession(server_url, username, password)
     server = xmlrpclib.ServerProxy(server_url + "/interface/xmlrpc")
