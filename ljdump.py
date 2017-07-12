@@ -24,7 +24,7 @@
 #
 # Copyright (c) 2005-2010 Greg Hewgill and contributors
 
-import codecs, os, pickle, pprint, re, shutil, sys, urllib2, xml.dom.minidom, xmlrpclib
+import codecs, os, pickle, pprint, re, shutil, sys, urllib2, xml.dom.minidom, xmlrpclib, time
 from xml.sax import saxutils
 
 MimeExtensions = {
@@ -38,6 +38,12 @@ try:
 except ImportError:
     import md5 as _md5
     md5 = _md5.new
+
+def minid(metacache, old_max):
+    try:
+        return min(x for x in metacache.keys() if x > old_max)
+    except:
+        return old_max
 
 def calcchallenge(challenge, password):
     return md5(challenge+md5(password).hexdigest()).hexdigest()
@@ -197,6 +203,7 @@ def ljdump(Server, Username, Password, Journal):
                     print "Error getting item: %s" % item['item']
                     pprint.pprint(x)
                     errors += 1
+                time.sleep(4);
             lastsync = item['time']
             writelast(Journal, lastsync, lastmaxid)
 
@@ -277,6 +284,11 @@ def ljdump(Server, Username, Password, Journal):
     newmaxid = maxid
     maxid = lastmaxid
     while True:
+        maxid = minid(metacache, maxid)
+        if maxid == lastmaxid:
+            break #no more ids in the metacache
+        maxid = maxid - 1 # has to be minus one because the rest assumes plus one
+
         try:
             try:
                 r = urllib2.urlopen(urllib2.Request(Server+"/export_comments.bml?get=comment_body&startid=%d%s" % (maxid+1, authas), headers = {'Cookie': "ljsession="+ljsession}))
@@ -312,6 +324,7 @@ def ljdump(Server, Username, Password, Journal):
             if found:
                 print "Warning: downloaded duplicate comment id %d in jitemid %s" % (id, jitemid)
             else:
+                print "Writing comment id %d from %s" % (id, comment['date'])
                 entry.documentElement.appendChild(createxml(entry, "comment", comment))
                 f = codecs.open("%s/C-%s" % (Journal, jitemid), "w", "UTF-8")
                 entry.writexml(f)
